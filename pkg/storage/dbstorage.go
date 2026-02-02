@@ -157,3 +157,39 @@ func (d *DataBase) setMigratePath() {
 		d.migratePath = "file://./migrations"
 	}
 }
+
+func (d *DataBase) AddNewOrder(string, int, string) error {
+	return nil
+}
+
+func (d *DataBase) GetOrders(context.Context, int) (*sql.Rows, error) {
+	return nil, nil
+}
+
+func (d *DataBase) GetUserBalance(userID int) *sql.Row {
+	return nil
+}
+
+func (d *DataBase) GetUserID(req user.UserRequest, isHashed bool) (int, error) {
+	return 0, nil
+}
+
+func (d *DataBase) GetUserIDWithOrder(orderNumber string) (int, error) {
+return  0, nil
+}
+
+func (d *DataBase) GetWithdrawals(r context.Context, userID int) (*sql.Rows, error) {
+	return nil, nil
+}
+
+func (d *DataBase) RegisterUserWithBalance(req user.UserRequest, isHashed bool) (int, error) {
+	return 0, nil
+}
+
+func (d *DataBase) UpdateBalance(userID int, req user.RequestOrder, userBalance user.Balance) error {
+	return nil
+}
+
+func (d * DataBase) UserIsRegistred(login string) (bool, error) {
+	return false, nil
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/config"
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/handler"
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/middleware"
+	"github.com/anatolyi0311/go-musthave-diploma-tpl/pkg/accrual"
 	"github.com/go-chi/chi"
 )
 
@@ -19,7 +20,7 @@ func main() {
 
 	cfg, err := config.NewConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load config")
+		log.Fatal("Failed to load config") // .Err(err).Msg("Failed to load config")
 	}
 
 	router := chi.NewRouter()
@@ -33,13 +34,13 @@ func main() {
 	router.Group(func(router chi.Router) {
 		router.Use(middleware.AuthMiddleware(cfg.SecretKey))
 
-		router.Post("/api/user/orders", h.UploadOrderHandler)
-		router.Get("/api/user/orders", h.GetOrdersHandler)
+		// router.Post("/api/user/orders", h.UploadOrderHandler)
+		// router.Get("/api/user/orders", h.GetOrdersHandler)
 
-		router.Get("/api/user/balance", h.GetBalanceHandler)
+		// router.Get("/api/user/balance", h.GetBalanceHandler)
 
-		router.Post("/api/user/balance/withdraw", h.WithdrawHandler)
-		router.Get("/api/user/withdrawals", h.GetWithdrawalsHandler)
+		// router.Post("/api/user/balance/withdraw", h.WithdrawHandler)
+		// router.Get("/api/user/withdrawals", h.GetWithdrawalsHandler)
 	})
 
 	accrual := accrual.NewAccrual(cfg.AccrualAddress, h.Storage)
@@ -54,7 +55,7 @@ func main() {
 	go func() {
 		log.Printf("Starting server on: %s...", cfg.Host)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Err(err).Msg("Server error")
+			log.Fatal("Server error") //.Err(err).Msg("Server error")
 		}
 	}()
 
@@ -62,7 +63,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 
-	log.Info().Msg("Graceful shutdown initiated...")
+	log.Println("Graceful shutdown initiated...") //.Msg("Graceful shutdown initiated...")
 
 	// Контекст для graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -73,8 +74,8 @@ func main() {
 
 	// Останавливаем HTTP-сервер
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Err(err).Msg("Forced server shutdown")
+		log.Fatal("Forced server shutdown") //.Err(err).Msg("Forced server shutdown")
 	} else {
-		log.Info().Msg("Server stopped gracefully")
+		log.Println("Server stopped gracefully") //.Info().Msg("Server stopped gracefully")
 	}
 }
