@@ -21,3 +21,7 @@ vendor/
 # IDEs directories
 .idea
 .vscode
+
+.DS_Store
+
+cmd/accrual/accrual_stub/
