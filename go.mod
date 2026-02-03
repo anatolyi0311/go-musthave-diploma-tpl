@@ -7,6 +7,7 @@ require (
 	github.com/go-chi/chi v1.5.5
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/gymgle/exercism v0.0.0-20190830081601-4b604853c19d
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/rs/zerolog v1.34.0
 )
