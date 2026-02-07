@@ -5,7 +5,7 @@ import (
 
 	m "github.com/anatolyi0311/go-musthave-diploma-tpl/internal/models_accrual"
 	repo "github.com/anatolyi0311/go-musthave-diploma-tpl/internal/repository_accrual"
-	 		
+
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -24,13 +24,13 @@ func New(repo repo.Repository) *AccrualEngine {
 	}
 }
 
-func (p *AccrualEngine) RegisterOrderForProcessing(order m.Order) {
+func (e *AccrualEngine) RegisterOrderForProcessing(order m.Order) {
 	for {
 		select {
-		case <-p.stopCh:
+		case <-e.stopCh:
 			logrus.Info("engine stopped")
 			return
-		case p.ordersToProcessCh <- order:
+		case e.ordersToProcessCh <- order:
 			logrus.Infof("%s registred for processing", order.ID)
 			return
 		}
