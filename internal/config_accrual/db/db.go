@@ -1,4 +1,4 @@
-package db_accrual
+package dbaccrual
 
 import (
 	"database/sql"
