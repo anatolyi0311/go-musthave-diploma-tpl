@@ -1,4 +1,4 @@
-package models_accrual
+package modelsaccrual
 
 import (
 	"errors"

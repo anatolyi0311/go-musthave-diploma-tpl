@@ -1,4 +1,4 @@
-package usecase_accual
+package usecaseaccual
 
 import (
 	"context"

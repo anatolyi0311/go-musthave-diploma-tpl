@@ -1,4 +1,4 @@
-package repository_accrual
+package repositoryaccrual
 
 const (
 	queryExistOrderID = `

@@ -1,4 +1,4 @@
-package migrations_accrual
+package migrationsaccrual
 
 const (
 	createEnum = `

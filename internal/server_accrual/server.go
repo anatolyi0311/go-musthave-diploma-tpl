@@ -1,4 +1,4 @@
-package server_accrual
+package serveraccrual
 
 import (
 	"context"

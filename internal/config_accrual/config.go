@@ -1,4 +1,4 @@
-package config_accrual
+package configaccrual
 
 import (
 	"flag"
