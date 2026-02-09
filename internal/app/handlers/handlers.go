@@ -4,6 +4,11 @@ import (
 	"compress/gzip"
 	"context"
 	"errors"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/auth"
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/customerrors"
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/models"
@@ -13,16 +18,12 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"strings"
-	"time"
 )
 
 //go:generate mockgen -source=handlers.go -destination=mocks/handlers_mock.go -package=mocks
 type Service interface {
-	CreateUser(ctx context.Context, login, password string) (token string, err error)
-	LogIn(ctx context.Context, login, password string) (token string, err error)
+	CreateUser(ctx context.Context, login, password, secretKey string) (token string, err error)
+	LogIn(ctx context.Context, login, password, secretKey string) (token string, err error)
 	InputUserOrder(ctx context.Context, userID uuid.UUID, orderNumber string) error
 	GetUserOrdersInfo(ctx context.Context, userID uuid.UUID) ([]models.UserOrder, error)
 	GetUserBalance(ctx context.Context, userID uuid.UUID) (userBalance models.BalanceResponseData, err error)
@@ -32,8 +33,9 @@ type Service interface {
 }
 
 type Handlers struct {
-	service Service
-	DB      *pgxpool.Pool
+	service   Service
+	DB        *pgxpool.Pool
+	SecretKey string
 }
 type responseData struct {
 	status int
@@ -44,10 +46,11 @@ type loggingResponseWriter struct {
 	responseData *responseData
 }
 
-func NewHandlers(service Service, DB *pgxpool.Pool) *Handlers {
+func NewHandlers(service Service, DB *pgxpool.Pool, secretKey string) *Handlers {
 	return &Handlers{
-		service: service,
-		DB:      DB,
+		service:   service,
+		DB:        DB,
+		SecretKey: secretKey,
 	}
 }
 
@@ -60,7 +63,7 @@ func (h Handlers) CreateUser(c *gin.Context) {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	tokenString, err := h.service.CreateUser(ctx, dataUser.Login, dataUser.Password)
+	tokenString, err := h.service.CreateUser(ctx, dataUser.Login, dataUser.Password, h.SecretKey)
 	if err != nil {
 		if errors.Is(err, customerrors.ErrUserAlreadyTaken) {
 			logrus.Error(err)
@@ -78,6 +81,7 @@ func (h Handlers) CreateUser(c *gin.Context) {
 	}
 	c.Status(http.StatusOK)
 	c.SetCookie("user_token", tokenString, 0, "/", "", false, true)
+	c.SetCookie("secret_key", h.SecretKey, 0, "/", "", false, true)
 }
 
 // LogIn аутентификация пользователя
@@ -89,7 +93,7 @@ func (h Handlers) LogIn(c *gin.Context) {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	tokenString, err := h.service.LogIn(ctx, dataUser.Login, dataUser.Password)
+	tokenString, err := h.service.LogIn(ctx, dataUser.Login, dataUser.Password, h.SecretKey)
 	if err != nil {
 		if errors.Is(err, customerrors.ErrAccessingDB) {
 			logrus.Error(err)
@@ -101,6 +105,7 @@ func (h Handlers) LogIn(c *gin.Context) {
 	}
 	c.Status(http.StatusOK)
 	c.SetCookie("user_token", tokenString, 0, "/", "", false, true)
+	c.SetCookie("secret_key", h.SecretKey, 0, "/", "", false, true)
 }
 
 // InputUserOrder загрузка пользователем нового заказа
@@ -261,6 +266,7 @@ func (c *compressWriter) Write(data []byte) (int, error) {
 func (c *compressWriter) Close() error {
 	return c.Writer.Close()
 }
+
 func (c *compressWriter) WriteString(s string) (int, error) {
 	return c.Writer.Write([]byte(s))
 }
@@ -324,11 +330,15 @@ func (h Handlers) MiddlewareCompress() gin.HandlerFunc {
 // This middleware ensures that only authenticated users can access certain routes.
 func (h Handlers) MiddlewareAuthPrivate() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		secretKey, err := c.Cookie("secret_key")
+		if secretKey == "" {
+			secretKey = h.SecretKey
+		}
 		tokenString, err := c.Cookie("user_token")
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
-		userID, err := auth.GetUserID(tokenString)
+		userID, err := auth.GetUserID(tokenString, secretKey)
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}

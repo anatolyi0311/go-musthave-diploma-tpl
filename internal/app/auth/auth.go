@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,12 +18,14 @@ type Claims struct {
 }
 
 const (
-	TokenExp  = time.Hour * 3
-	SecretKey = "SnJSkf123jlLKNfsNln"
+	TokenExp = time.Hour * 3
 )
 
 // BuildJWTString creates a token with the HS256 signature algorithm and Claims statements and returns it as a string.
-func BuildJWTString(userID uuid.UUID) (string, error) {
+func BuildJWTString(userID uuid.UUID, secretKey string) (string, error) {
+	if secretKey == "" {
+		return "", errors.New("Secret key is empty")
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			// time create token
@@ -31,12 +34,12 @@ func BuildJWTString(userID uuid.UUID) (string, error) {
 		UserID: userID,
 	})
 	// create token string
-	tokenString, err := token.SignedString([]byte(SecretKey))
+	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		logrus.Error(err)
 		return "", err
 	}
-	return tokenString, nil
+	return tokenString, err
 }
 
 // GenerateUniqueID генерирует UUID при помощи библиотеки golang.org/x/crypto/bcrypt
@@ -45,13 +48,16 @@ func GenerateUniqueID() uuid.UUID {
 }
 
 // GetUserID we check the validity of the token and if it is valid, then we get and return the UserID from it
-func GetUserID(tokenString string) (uuid.UUID, error) {
+func GetUserID(tokenString, secretKey string) (uuid.UUID, error) {
+	if secretKey == "" {
+		return uuid.Nil, errors.New("Secret key is empty")
+	}
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signed method: %v", t.Header["alg"])
 		}
-		return []byte(SecretKey), nil
+		return []byte(secretKey), nil
 	})
 	if err != nil {
 		logrus.Error(err)

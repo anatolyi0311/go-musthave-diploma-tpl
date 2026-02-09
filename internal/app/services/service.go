@@ -82,7 +82,7 @@ func isValidLuhn(number string) bool {
 
 // CreateUser метод регистрации пользователя, выполняет проверки на качество логина и пароля
 // и в случае соответствия сохраняет пользователя в базу данных
-func (s GmartServices) CreateUser(ctx context.Context, login, password string) (token string, err error) {
+func (s GmartServices) CreateUser(ctx context.Context, login, password, secretKey string) (token string, err error) {
 	//Пришлось выключить, данные условия не заложены в автотесты((
 	//if err = s.checkRegistrationData(login, password); err != nil {
 	//	logrus.Error(err)
@@ -102,7 +102,7 @@ func (s GmartServices) CreateUser(ctx context.Context, login, password string) (
 		return "", err
 	}
 	userID := auth.GenerateUniqueID()
-	token, err = auth.BuildJWTString(userID)
+	token, err = auth.BuildJWTString(userID, secretKey)
 	if err != nil {
 		return "", customerrors.ErrSaveNewUser
 	}
@@ -123,7 +123,7 @@ func (s GmartServices) CreateUser(ctx context.Context, login, password string) (
 }
 
 // LogIn метод аутентификации пользователя, в случае успеха возвращает token
-func (s GmartServices) LogIn(ctx context.Context, login, password string) (token string, err error) {
+func (s GmartServices) LogIn(ctx context.Context, login, password, secretKey string) (token string, err error) {
 	//Пришлось выключить, данные условия не заложены в автотесты((
 	//if err = s.checkLogin(login); err != nil {
 	//	logrus.Error(err)
@@ -139,7 +139,7 @@ func (s GmartServices) LogIn(ctx context.Context, login, password string) (token
 		if err != nil {
 			return "", customerrors.ErrAccessingDB
 		}
-		token, err = auth.BuildJWTString(savedUserID)
+		token, err = auth.BuildJWTString(savedUserID, secretKey)
 		if err != nil {
 			return "", customerrors.ErrSaveNewUser
 		}

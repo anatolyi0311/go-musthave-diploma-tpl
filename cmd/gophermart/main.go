@@ -53,7 +53,7 @@ func main() {
 	logrus.Infof("Server started:\nServer addres %s\nBase URL %s\nLog level %s\n", cfg.EnvServAdr, cfg.EnvAccrualSystemAddress, cfg.EnvLogLevel)
 
 	GophermartService := services.NewGmartServices(GophermartRepository, cfg.EnvAccrualSystemAddress, dbPool)
-	GophermartHandler := handlers.NewHandlers(GophermartService, dbPool)
+	GophermartHandler := handlers.NewHandlers(GophermartService, dbPool, cfg.EnvSecretKey)
 
 	router := gin.Default()
 
