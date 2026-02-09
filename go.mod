@@ -1,6 +1,6 @@
 module github.com/anatolyi0311/go-musthave-diploma-tpl
 
-go 1.25.7
+go 1.24.12
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
