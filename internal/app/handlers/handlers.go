@@ -331,6 +331,9 @@ func (h Handlers) MiddlewareCompress() gin.HandlerFunc {
 func (h Handlers) MiddlewareAuthPrivate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		secretKey, err := c.Cookie("secret_key")
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
 		if secretKey == "" {
 			secretKey = h.SecretKey
 		}
