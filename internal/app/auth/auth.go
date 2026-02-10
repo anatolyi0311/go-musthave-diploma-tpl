@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -18,14 +17,19 @@ type Claims struct {
 }
 
 const (
-	TokenExp = time.Hour * 3
+	TokenExp  = time.Hour * 3
+	SecretKey = "SnJSkf123jlLKNfsNln"
 )
 
 // BuildJWTString creates a token with the HS256 signature algorithm and Claims statements and returns it as a string.
 func BuildJWTString(userID uuid.UUID, secretKey string) (string, error) {
+	// if secretKey == "" {
+	// 	return "", errors.New("secret key is empty")
+	// }
 	if secretKey == "" {
-		return "", errors.New("secret key is empty")
+		secretKey = SecretKey
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			// time create token
@@ -49,9 +53,13 @@ func GenerateUniqueID() uuid.UUID {
 
 // GetUserID we check the validity of the token and if it is valid, then we get and return the UserID from it
 func GetUserID(tokenString, secretKey string) (uuid.UUID, error) {
+	// if secretKey == "" {
+	// 	return uuid.Nil, errors.New("secret key is empty")
+	// }
 	if secretKey == "" {
-		return uuid.Nil, errors.New("secret key is empty")
+		secretKey = SecretKey
 	}
+
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
