@@ -14,7 +14,7 @@ import (
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	// "github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -35,7 +35,7 @@ type Service interface {
 
 type Handlers struct {
 	service   Service
-	DB        *pgxpool.Pool
+	// DB        *pgxpool.Pool
 	SecretKey string
 }
 type responseData struct {
@@ -47,10 +47,10 @@ type loggingResponseWriter struct {
 	responseData *responseData
 }
 
-func NewHandlers(service Service, DB *pgxpool.Pool, secretKey string) *Handlers {
+func NewHandlers(service Service, secretKey string) *Handlers {
 	return &Handlers{
 		service:   service,
-		DB:        DB,
+		// DB:        DB,
 		SecretKey: secretKey,
 	}
 }
