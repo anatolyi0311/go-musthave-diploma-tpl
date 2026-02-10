@@ -3,7 +3,8 @@ package logcfg
 import (
 	"fmt"
 	"io"
-	"log/slog"
+
+	// "log/slog"
 	"os"
 	"path"
 	"runtime"
@@ -15,9 +16,9 @@ import (
 func RunLoggerConfig(EnvLogs string) {
 
 	// TODO
-	var hlg *slog.Logger
-	slog.SetDefault(hlg)
-	slog.SetLogLoggerLevel(slog.LevelInfo)
+	// var hlg *slog.Logger
+	// slog.SetDefault(hlg)
+	// slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	logLevel, err := logrus.ParseLevel(EnvLogs)
 	if err != nil {
