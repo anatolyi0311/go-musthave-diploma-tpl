@@ -7,6 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strconv"
+	"sync"
+	"time"
+	"unicode"
+
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/auth"
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/customerrors"
 	"github.com/anatolyi0311/go-musthave-diploma-tpl/internal/app/models"
@@ -15,26 +23,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"regexp"
-	"strconv"
-	"sync"
-	"time"
-	"unicode"
 )
 
 // Repository defines the interface for interacting with the storage backend.
 //
 //go:generate mockgen -source=service.go -destination=mocks/service_mock.go -package=mocks
 type Repository interface {
-	StoreNewUser(ctx context.Context, tx pgx.Tx, userID uuid.UUID, login string, hashedPassword []byte) error
 	StoreNewUserBalance(ctx context.Context, tx pgx.Tx, userID uuid.UUID) error
-	StoreUserOrder(ctx context.Context, tx pgx.Tx, orderNumber, orderStatus string, userID uuid.UUID, bonus decimal.Decimal) error
 	StoreUserWithdrawal(ctx context.Context, tx pgx.Tx, userID uuid.UUID, orderNumber string, sum decimal.Decimal) error
-	GetUserHashPassword(ctx context.Context, login string) ([]byte, error)
 	GetUUIDFromOrders(ctx context.Context, orderNumber string) (uuid.UUID, error)
-	GetUUIDFromUsers(ctx context.Context, login string) (uuid.UUID, error)
 	GetProcessingOrders(ctx context.Context) ([]models.UserOrder, error)
 	GetUserProcessingOrders(ctx context.Context, userID uuid.UUID) ([]models.UserOrder, error)
 	GetUserOrders(ctx context.Context, userID uuid.UUID) ([]models.UserOrder, error)
@@ -47,13 +44,17 @@ type Repository interface {
 }
 
 type GmartServices struct {
+	user           User
+	order          Order
 	repository     Repository
 	accrualAddress string
 	dbPool         *pgxpool.Pool //opened in main func dbPool pool connections
 }
 
-func NewGmartServices(repository Repository, accrualAddress string, dbPool *pgxpool.Pool) *GmartServices {
+func NewGmartServices(repository Repository, user User, order Order, accrualAddress string, dbPool *pgxpool.Pool) *GmartServices {
 	return &GmartServices{
+		user:           user,
+		order:          order,
 		repository:     repository,
 		accrualAddress: accrualAddress,
 		dbPool:         dbPool,
@@ -91,7 +92,7 @@ func (s GmartServices) CreateUser(ctx context.Context, login, password, secretKe
 	if len(login) < 1 || len(password) < 1 {
 		return "", customerrors.ErrSaveNewUser
 	}
-	_, err = s.repository.GetUserHashPassword(ctx, login)
+	_, err = s.user.GetUserHashPassword(ctx, login)
 	if err == nil {
 		logrus.Error(customerrors.ErrUserAlreadyTaken)
 		return "", customerrors.ErrUserAlreadyTaken
@@ -107,7 +108,7 @@ func (s GmartServices) CreateUser(ctx context.Context, login, password, secretKe
 		return "", customerrors.ErrSaveNewUser
 	}
 	if err = s.withTransaction(ctx, func(tx pgx.Tx) error {
-		if err = s.repository.StoreNewUser(ctx, tx, userID, login, hashedPassword); err != nil {
+		if err = s.user.StoreNewUser(ctx, tx, userID, login, hashedPassword); err != nil {
 			logrus.Error(customerrors.ErrSaveNewUser)
 			return customerrors.ErrSaveNewUser
 		}
@@ -129,13 +130,13 @@ func (s GmartServices) LogIn(ctx context.Context, login, password, secretKey str
 	//	logrus.Error(err)
 	//	return "", err
 	//}
-	savedHashedPassword, err := s.repository.GetUserHashPassword(ctx, login)
+	savedHashedPassword, err := s.user.GetUserHashPassword(ctx, login)
 	if err != nil {
 		logrus.Error(err)
 		return "", err
 	}
 	if auth.CheckHashPasswordForValid(savedHashedPassword, password) {
-		savedUserID, err := s.repository.GetUUIDFromUsers(ctx, login)
+		savedUserID, err := s.user.GetUUIDFromUsers(ctx, login)
 		if err != nil {
 			return "", customerrors.ErrAccessingDB
 		}
@@ -293,7 +294,7 @@ func (s GmartServices) InputUserOrder(ctx context.Context, userID uuid.UUID, ord
 		}
 		newUserBalance := userBalance.Add(*accrualData.Accrual)
 		return s.withTransaction(ctx, func(tx pgx.Tx) error {
-			if err = s.repository.StoreUserOrder(ctx, tx, orderNumber, accrualData.Status, userID, *accrualData.Accrual); err != nil {
+			if err = s.order.StoreUserOrder(ctx, tx, orderNumber, accrualData.Status, userID, *accrualData.Accrual); err != nil {
 				logrus.Error(err)
 				return customerrors.ErrAccessingDB
 			}

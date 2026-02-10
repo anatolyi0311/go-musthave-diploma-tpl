@@ -31,6 +31,8 @@ func main() {
 		err                  error
 		cfg                  *config.ENVConfig
 		GophermartRepository services.Repository
+		GophermartUser       services.User
+		GophermartOrder      services.Order
 	)
 
 	cfg = config.NewConfig()
@@ -48,11 +50,13 @@ func main() {
 
 	defer dbPool.Close()
 	GophermartRepository = repositories.NewURLInDBRepo(dbPool)
+	GophermartUser = repositories.NewURLInDBRepo(dbPool)
+	GophermartOrder = repositories.NewURLInDBRepo(dbPool)
 
 	logcfg.RunLoggerConfig(cfg.EnvLogLevel)
 	logrus.Infof("Server started:\nServer addres %s\nBase URL %s\nLog level %s\n", cfg.EnvServAdr, cfg.EnvAccrualSystemAddress, cfg.EnvLogLevel)
 
-	GophermartService := services.NewGmartServices(GophermartRepository, cfg.EnvAccrualSystemAddress, dbPool)
+	GophermartService := services.NewGmartServices(GophermartRepository, GophermartUser, GophermartOrder, cfg.EnvAccrualSystemAddress, dbPool)
 	GophermartHandler := handlers.NewHandlers(GophermartService, dbPool, cfg.EnvSecretKey)
 
 	router := gin.Default()

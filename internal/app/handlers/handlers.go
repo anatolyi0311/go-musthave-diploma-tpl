@@ -22,6 +22,7 @@ import (
 
 //go:generate mockgen -source=handlers.go -destination=mocks/handlers_mock.go -package=mocks
 type Service interface {
+	// InitDB(ctx context.Context)
 	CreateUser(ctx context.Context, login, password, secretKey string) (token string, err error)
 	LogIn(ctx context.Context, login, password, secretKey string) (token string, err error)
 	InputUserOrder(ctx context.Context, userID uuid.UUID, orderNumber string) error
