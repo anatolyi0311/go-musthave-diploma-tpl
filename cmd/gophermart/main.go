@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -38,13 +39,13 @@ func main() {
 	cfg = config.NewConfig()
 	confPool, err := pgxpool.ParseConfig(cfg.EnvDataBase)
 	if err != nil {
-		logrus.Errorf("error parsing config: %v", err)
+		slog.Error("error parsing config: %v", err.Error(), "")
 	}
 	confPool.MaxConns = 50
 	confPool.MinConns = 10
 	dbPool, err = pgxpool.NewWithConfig(context.Background(), confPool)
 	if err != nil {
-		logrus.Error("Don't connect to dbPool: ", err)
+		slog.Error("Don't connect to dbPool: ", err.Error(), "")
 		os.Exit(1)
 	}
 
@@ -54,7 +55,7 @@ func main() {
 	GophermartOrder = repositories.NewURLInDBRepo(dbPool)
 
 	logcfg.RunLoggerConfig(cfg.EnvLogLevel)
-	logrus.Infof("Server started:\nServer addres %s\nBase URL %s\nLog level %s\n", cfg.EnvServAdr, cfg.EnvAccrualSystemAddress, cfg.EnvLogLevel)
+	slog.Info("Server started:\nServer addres %s\nBase URL %s\nLog level %s\n", cfg.EnvServAdr, cfg.EnvAccrualSystemAddress, cfg.EnvLogLevel, "")
 
 	GophermartService := services.NewGmartServices(GophermartRepository, GophermartUser, GophermartOrder, cfg.EnvAccrualSystemAddress, dbPool)
 	GophermartHandler := handlers.NewHandlers(GophermartService, cfg.EnvSecretKey)

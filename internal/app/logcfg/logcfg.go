@@ -3,6 +3,7 @@ package logcfg
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"runtime"
@@ -12,6 +13,11 @@ import (
 )
 
 func RunLoggerConfig(EnvLogs string) {
+
+	// TODO
+	var hlg *slog.Logger
+	slog.SetDefault(hlg)
+	slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	logLevel, err := logrus.ParseLevel(EnvLogs)
 	if err != nil {
@@ -34,4 +40,5 @@ func RunLoggerConfig(EnvLogs string) {
 		MaxAge:     30,
 	})
 	logrus.SetOutput(mw)
+	// slog.NewTextHandler(mw, &slog.HandlerOptions{})
 }
