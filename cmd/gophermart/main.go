@@ -81,14 +81,14 @@ func main() {
 
 	logrus.Info("Starting server on: ", cfg.EnvServAdr)
 
-	go func() {
-		//TODO определить подходящий контекст
-		ctx := context.Background()
-		for {
-			_ = GophermartService.RunUpdateOrdersStatusJob(ctx)
-			time.Sleep(1 * time.Second)
-		}
-	}()
+	// go func() {
+	// 	//TODO определить подходящий контекст
+	// 	ctx := context.Background()
+	// 	for {
+	// 		_ = GophermartService.RunUpdateOrdersStatusJob(ctx)
+	// 		time.Sleep(1 * time.Second)
+	// 	}
+	// }()
 
 	go func() {
 		if err = server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
